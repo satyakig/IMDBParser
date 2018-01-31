@@ -44,6 +44,8 @@ public class Imdb {
                 printer.println(titleID.get(i));
             printer.close();
 
+            System.out.println("Done MakeIDs\n\n");
+
         }catch(FileNotFoundException e) {
             System.out.println(e.getMessage());
         }
