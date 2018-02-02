@@ -12,12 +12,6 @@ public class Runab implements Runnable {
 
             if(line.equalsIgnoreCase("q") || line.equalsIgnoreCase("quit"))
                 Imdb.run = false;
-
-            try {
-                Thread.sleep(300000);
-            }catch(InterruptedException err) {
-                System.out.println(err.getMessage());
-            }
         }
     }
 }

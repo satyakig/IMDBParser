@@ -4,6 +4,7 @@ import com.univocity.parsers.tsv.TsvParserSettings;
 import java.io.*;
 import java.util.*;
 import java.net.*;
+import java.util.concurrent.TimeUnit;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -52,9 +53,11 @@ public class Imdb {
     }
 
     public static void doPosts() {
+        long start = System.currentTimeMillis();
         ArrayList<String> allId = new ArrayList<>();
 
         ArrayList<String> totalFail = new ArrayList<>();
+        ArrayList<String> httpFail = new ArrayList<>();
         ArrayList<String> checkFail = new ArrayList<>();
 
         JSONParser parser = new JSONParser();
@@ -66,7 +69,7 @@ public class Imdb {
 
         int total = 0, failed = 0, pass = 0, cur = 0, upc = 0;
         try {
-            Scanner scanner = new Scanner(new File("newHello.txt"));
+            Scanner scanner = new Scanner(new File("Movies 17-18.txt"));
 
             while (scanner.hasNextLine())
                 allId.add(scanner.nextLine());
@@ -103,7 +106,7 @@ public class Imdb {
                 if(tempJson.get("Response").toString().equalsIgnoreCase("True") & !tempJson.get("Title").toString().equalsIgnoreCase("N/A")) {
 
                     if(tempJson.get("Year").toString().equalsIgnoreCase("2017")) {
-                        if(rate && rel  && run && gen && dir && act && plot && lang && coun && post && rati && box) {
+                        if(rate && rel && run && gen && dir && act && plot && lang && coun && post && rati && box) {
                             current.put(id, tmpObj);
                             pass++;
                             cur++;
@@ -114,7 +117,7 @@ public class Imdb {
                         }
                     }
                     else if(tempJson.get("Year").toString().equalsIgnoreCase("2018")) {
-                        if(gen && dir && act && plot && lang && coun && post) {
+                        if(rel && gen && dir && act && plot && lang && coun && post) {
                             upcoming.put(id, tmpObj);
                             pass++;
                             upc++;
@@ -138,7 +141,7 @@ public class Imdb {
                 totalFail.add(id);
                 failed++;
             }catch(Exception e) {
-                totalFail.add(id);
+                httpFail.add(id);
                 failed++;
             }
             total++;
@@ -146,12 +149,17 @@ public class Imdb {
         run = false;
 
         try {
-            System.out.println("\nTotal = " + total + ", Failed = " + failed + ", Movies = " + pass + ", Current = " + cur + ", Upcoming = " + upc);
+            long end = System.currentTimeMillis();
+            long diff = end - start;
+            System.out.println("\nTime elapsed = " + (diff / (60 * 1000) % 60) +  "mins  " + diff / 1000 % 60 + " secs");
+            System.out.println("Total = " + total + ", Failed = " + failed + ", Movies = " + pass + ", Current = " + cur + ", Upcoming = " + upc);
+
             FileWriter p1 = new FileWriter("current.json");
             FileWriter p2 = new FileWriter("upcoming.json");
 
             PrintWriter p3 = new PrintWriter(new File("totalFail.txt"));
             PrintWriter p4 = new PrintWriter(new File("checkFail.txt"));
+            PrintWriter p5 = new PrintWriter(new File("httpFail.txt"));
 
             p1.write(current.toJSONString());
             p2.write(upcoming.toJSONString());
@@ -162,10 +170,14 @@ public class Imdb {
             for(int i = 0; i < checkFail.size(); i++)
                 p4.println(checkFail.get(i));
 
+            for(int i = 0; i < httpFail.size(); i++)
+                p5.println(httpFail.get(i));
+
             p1.close();
             p2.close();
             p3.close();
             p4.close();
+            p5.close();
 
         }catch(IOException e) {
             e.printStackTrace();
@@ -203,6 +215,7 @@ public class Imdb {
 
         Runab one = new Runab();
         Thread t1 = new Thread(one);
+        t1.setDaemon(true);
         t1.start();
 
         doPosts();
