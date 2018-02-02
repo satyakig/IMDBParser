@@ -1,1 +1,5 @@
 *.tsv
+*.iml
+*.class
+out/
+.idea/

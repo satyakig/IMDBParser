@@ -55,60 +55,97 @@ public class Imdb {
         JSONArray arr = new JSONArray();
         JSONParser parser = new JSONParser();
         JSONObject totalObject = new JSONObject();
-        int i = 0, j = 0;
 
+        ArrayList<String> fail1 = new ArrayList<>();
+        ArrayList<String> fail2 = new ArrayList<>();
+
+        ArrayList<String> allId = new ArrayList<>();
+
+        int total = 0, pass = 0, failed = 0;
         try {
             Scanner scanner = new Scanner(new File("newHello.txt"));
 
-            while(scanner.hasNextLine()) {
-                try {
-                    String id = scanner.nextLine();
-                    String res = get(id);
+            while (scanner.hasNextLine())
+                allId.add(scanner.nextLine());
+        }catch(FileNotFoundException err) {
+            System.out.println("File Not Found: " + err.getMessage());
+        }
 
-                    Object tmpObj = parser.parse(res);
-                    JSONObject tempJson = (JSONObject) tmpObj;
-
-
-                    if(tempJson.get("Response").equals("True") || tempJson.get("Response").equals("true")) {
-                        if(tempJson.get("Language").equals("English") || tempJson.get("Language").equals("english")) {
-                            if(tempJson.get("Country").equals("USA") || tempJson.get("Language").equals("usa")) {
-                                totalObject.put(id, tmpObj);
-                                arr.add(tmpObj);
-                                j++;
-                            }
-                            else
-                                System.out.println(i + " - not usa " + id);
-                        }
-                        else
-                            System.out.println(i + " - not english " + id);
-                    }
-                    else
-                        System.out.println(i + " - false " + id);
-                }catch(ParseException e) {
-                    System.out.println(i + " IOException: " + e.getMessage());
-                }catch(Exception e) {
-                    System.out.println(i + " HTTPException: " + e.getMessage());
-                }
-                i++;
-            }
+        for(int index = allId.size() - 1; index >=0 && pass < 500; index--) {
+            String id = allId.get(index);
+            if(total % 100 == 0)
+                System.out.println("Total: " + total + ", Pass: " + pass + ", Fail: " + failed);
 
             try {
-                System.out.println("IDs read = " + i + "\nMovies made = " + j);
-                FileWriter p1 = new FileWriter("arr.json");
-                FileWriter p2 = new FileWriter("obj.json");
-                p1.write(arr.toJSONString());
-                p2.write(totalObject.toJSONString());
+                String res = get(id);
+                Object tmpObj = parser.parse(res);
+                JSONObject tempJson = (JSONObject) tmpObj;
 
-                p1.close();
-                p2.close();
+                boolean a = tempJson.get("Response").toString().equalsIgnoreCase("True");
+                boolean b = !tempJson.get("Title").toString().equalsIgnoreCase("N/A");
+                boolean c = !tempJson.get("Year").toString().equalsIgnoreCase("N/A") && (tempJson.get("Year").toString().equalsIgnoreCase("2017") || tempJson.get("Year").toString().equalsIgnoreCase("2018"));
+                boolean d = !tempJson.get("Released").toString().equalsIgnoreCase("N/A");
+                boolean e = !tempJson.get("Genre").toString().equalsIgnoreCase("N/A");
+                boolean f = !tempJson.get("Director").toString().equalsIgnoreCase("N/A");
+                boolean g = !tempJson.get("Actors").toString().equalsIgnoreCase("N/A");
+                boolean h = !tempJson.get("Plot").toString().equalsIgnoreCase("N/A");
+                boolean i = tempJson.get("Language").toString().contains("English");
+                boolean j = tempJson.get("Country").toString().contains("USA");
+                boolean k = !tempJson.get("Poster").toString().equalsIgnoreCase("N/A");
 
-            }catch(IOException e) {
-                e.printStackTrace();
-                System.out.println("IOException: " + e.getMessage());
+                if(a) {
+                    if(b && c && d && e && f && g && h && i && j && k) {
+                        totalObject.put(id, tmpObj);
+                        arr.add(tmpObj);
+                        pass++;
+                    }
+                    else {
+                        fail2.add(id);
+                        failed++;
+                        System.out.println(id + " - Title:" + b + ", Year:" + c + ", Released:" + d + ", Genre:" + e + ", Director:" + f + ", Actors:" + g + ", Plot:" + h + ", Language:" + i + ", Country:" + j + ", Poster:" + k);
+                    }
+                }
+                else {
+                    fail1.add(id);
+                    failed++;
+                }
+
+            }catch(ParseException e) {
+                fail2.add(id);
+                failed++;
+                System.out.println(total + " ParseException: " + e.getMessage());
+            }catch(Exception e) {
+                fail1.add(id);
+                failed++;
             }
+            total++;
+        }
 
-        }catch(FileNotFoundException err) {
-            System.out.println("File Exception: " + err.getMessage());
+        try {
+            System.out.println("IDs read = " + total + "\nMovies made = " + pass + "\nMovies failed = " + failed);
+            FileWriter p1 = new FileWriter("arr.json");
+            FileWriter p2 = new FileWriter("obj.json");
+
+            PrintWriter p3 = new PrintWriter(new File("fail1.txt"));
+            PrintWriter p4 = new PrintWriter(new File("fail2.txt"));
+
+            p1.write(arr.toJSONString());
+            p2.write(totalObject.toJSONString());
+
+            for(int i = 0; i < fail1.size(); i++)
+                p3.println(fail1.get(i));
+
+            for(int i = 0; i < fail2.size(); i++)
+                p4.println(fail2.get(i));
+
+            p1.close();
+            p2.close();
+            p3.close();
+            p4.close();
+
+        }catch(IOException e) {
+            e.printStackTrace();
+            System.out.println("IOException: " + e.getMessage());
         }
     }
 
@@ -133,7 +170,7 @@ public class Imdb {
 
 
     public static void main(String[] args) {
-        makeIDS();
+//        makeIDS();
         doPosts();
     }
 }
