@@ -5,11 +5,11 @@ import java.io.*;
 import java.util.*;
 import java.net.*;
 import org.json.simple.JSONObject;
-import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 public class Imdb {
+    public static volatile boolean run = true;
 
     public static void makeIDS() {
         TsvParserSettings settings = new TsvParserSettings();
@@ -52,16 +52,19 @@ public class Imdb {
     }
 
     public static void doPosts() {
-        JSONArray arr = new JSONArray();
-        JSONParser parser = new JSONParser();
-        JSONObject totalObject = new JSONObject();
-
-        ArrayList<String> fail1 = new ArrayList<>();
-        ArrayList<String> fail2 = new ArrayList<>();
-
         ArrayList<String> allId = new ArrayList<>();
 
-        int total = 0, pass = 0, failed = 0;
+        ArrayList<String> totalFail = new ArrayList<>();
+        ArrayList<String> checkFail = new ArrayList<>();
+
+        JSONParser parser = new JSONParser();
+        JSONObject current = new JSONObject();
+        JSONObject upcoming = new JSONObject();
+
+        Scanner in = new Scanner(System.in);
+
+
+        int total = 0, failed = 0, pass = 0, cur = 0, upc = 0;
         try {
             Scanner scanner = new Scanner(new File("newHello.txt"));
 
@@ -71,72 +74,93 @@ public class Imdb {
             System.out.println("File Not Found: " + err.getMessage());
         }
 
-        for(int index = allId.size() - 1; index >=0 && pass < 500; index--) {
+
+        for(int index = allId.size() - 1; index >=0 && run; index--) {
             String id = allId.get(index);
-            if(total % 100 == 0)
-                System.out.println("Total: " + total + ", Pass: " + pass + ", Fail: " + failed);
+
+            if(total % 50 == 0)
+                System.out.println("\nTotal = " + total + ", Failed = " + failed + ", Movies = " + pass + ", Current = " + cur + ", Upcoming = " + upc);
 
             try {
                 String res = get(id);
                 Object tmpObj = parser.parse(res);
                 JSONObject tempJson = (JSONObject) tmpObj;
 
-                boolean a = tempJson.get("Response").toString().equalsIgnoreCase("True");
-                boolean b = !tempJson.get("Title").toString().equalsIgnoreCase("N/A");
-                boolean c = !tempJson.get("Year").toString().equalsIgnoreCase("N/A") && (tempJson.get("Year").toString().equalsIgnoreCase("2017") || tempJson.get("Year").toString().equalsIgnoreCase("2018"));
-                boolean d = !tempJson.get("Released").toString().equalsIgnoreCase("N/A");
-                boolean e = !tempJson.get("Genre").toString().equalsIgnoreCase("N/A");
-                boolean f = !tempJson.get("Director").toString().equalsIgnoreCase("N/A");
-                boolean g = !tempJson.get("Actors").toString().equalsIgnoreCase("N/A");
-                boolean h = !tempJson.get("Plot").toString().equalsIgnoreCase("N/A");
-                boolean i = tempJson.get("Language").toString().contains("English");
-                boolean j = tempJson.get("Country").toString().contains("USA");
-                boolean k = !tempJson.get("Poster").toString().equalsIgnoreCase("N/A");
+                boolean rate = !tempJson.get("Rated").toString().equalsIgnoreCase("N/A");
+                boolean rel = !tempJson.get("Released").toString().equalsIgnoreCase("N/A");
+                boolean run = !tempJson.get("Runtime").toString().equalsIgnoreCase("N/A");
+                boolean gen = !tempJson.get("Genre").toString().equalsIgnoreCase("N/A");
+                boolean dir = !tempJson.get("Director").toString().equalsIgnoreCase("N/A");
+                boolean act = !tempJson.get("Actors").toString().equalsIgnoreCase("N/A");
+                boolean plot = !tempJson.get("Plot").toString().equalsIgnoreCase("N/A");
+                boolean lang = tempJson.get("Language").toString().contains("English");
+                boolean coun = tempJson.get("Country").toString().contains("USA");
+                boolean post = !tempJson.get("Poster").toString().equalsIgnoreCase("N/A");
+                boolean rati = !tempJson.get("imdbRating").toString().equalsIgnoreCase("N/A");
+                boolean box = !tempJson.get("BoxOffice").toString().equalsIgnoreCase("N/A");
 
-                if(a) {
-                    if(b && c && d && e && f && g && h && i && j && k) {
-                        totalObject.put(id, tmpObj);
-                        arr.add(tmpObj);
-                        pass++;
+
+                if(tempJson.get("Response").toString().equalsIgnoreCase("True") & !tempJson.get("Title").toString().equalsIgnoreCase("N/A")) {
+
+                    if(tempJson.get("Year").toString().equalsIgnoreCase("2017")) {
+                        if(rate && rel  && run && gen && dir && act && plot && lang && coun && post && rati && box) {
+                            current.put(id, tmpObj);
+                            pass++;
+                            cur++;
+                        }
+                        else {
+                            checkFail.add(id);
+                            failed++;
+                        }
+                    }
+                    else if(tempJson.get("Year").toString().equalsIgnoreCase("2018")) {
+                        if(gen && dir && act && plot && lang && coun && post) {
+                            upcoming.put(id, tmpObj);
+                            pass++;
+                            upc++;
+                        }
+                        else {
+                            checkFail.add(id);
+                            failed++;
+                        }
                     }
                     else {
-                        fail2.add(id);
+                        totalFail.add(id);
                         failed++;
-                        System.out.println(id + " - Title:" + b + ", Year:" + c + ", Released:" + d + ", Genre:" + e + ", Director:" + f + ", Actors:" + g + ", Plot:" + h + ", Language:" + i + ", Country:" + j + ", Poster:" + k);
                     }
                 }
                 else {
-                    fail1.add(id);
+                    totalFail.add(id);
                     failed++;
                 }
 
             }catch(ParseException e) {
-                fail2.add(id);
+                totalFail.add(id);
                 failed++;
-                System.out.println(total + " ParseException: " + e.getMessage());
             }catch(Exception e) {
-                fail1.add(id);
+                totalFail.add(id);
                 failed++;
             }
             total++;
         }
+        run = false;
 
         try {
-            System.out.println("IDs read = " + total + "\nMovies made = " + pass + "\nMovies failed = " + failed);
-            FileWriter p1 = new FileWriter("arr.json");
-            FileWriter p2 = new FileWriter("obj.json");
+            System.out.println("\nTotal = " + total + ", Failed = " + failed + ", Movies = " + pass + ", Current = " + cur + ", Upcoming = " + upc);
+            FileWriter p1 = new FileWriter("current.json");
+            FileWriter p2 = new FileWriter("upcoming.json");
 
-            PrintWriter p3 = new PrintWriter(new File("fail1.txt"));
-            PrintWriter p4 = new PrintWriter(new File("fail2.txt"));
+            PrintWriter p3 = new PrintWriter(new File("totalFail.txt"));
+            PrintWriter p4 = new PrintWriter(new File("checkFail.txt"));
 
-            p1.write(arr.toJSONString());
-            p2.write(totalObject.toJSONString());
+            p1.write(current.toJSONString());
+            p2.write(upcoming.toJSONString());
 
-            for(int i = 0; i < fail1.size(); i++)
-                p3.println(fail1.get(i));
+            for(int i = 0; i < totalFail.size(); i++)
+                p3.println(totalFail.get(i));
 
-            for(int i = 0; i < fail2.size(); i++)
-                p4.println(fail2.get(i));
+            for(int i = 0; i < checkFail.size(); i++)
+                p4.println(checkFail.get(i));
 
             p1.close();
             p2.close();
@@ -168,9 +192,19 @@ public class Imdb {
         return response.toString();
     }
 
+    public static void doThread() {
+        Thread t = new Thread();
+
+    }
+
 
     public static void main(String[] args) {
 //        makeIDS();
+
+        Runab one = new Runab();
+        Thread t1 = new Thread(one);
+        t1.start();
+
         doPosts();
     }
 }
