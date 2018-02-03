@@ -4,7 +4,6 @@ import com.univocity.parsers.tsv.TsvParserSettings;
 import java.io.*;
 import java.util.*;
 import java.net.*;
-import java.util.concurrent.TimeUnit;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -17,35 +16,35 @@ public class Imdb {
         settings.getFormat().setLineSeparator("\n");
         TsvParser parser = new TsvParser(settings);
 
-        List<String[]> allRows;
-        ArrayList<String> titleID = new ArrayList<>();
+        List<String[]> allTitles;
+        ArrayList<String> titles = new ArrayList<>();
 
         try {
-            allRows = parser.parseAll(new FileReader("data.tsv"));
+            allTitles = parser.parseAll(new FileReader("data.tsv"));
 
-            System.out.println(allRows.size() + "\n");
-            for(int i = allRows.size() - 1; i > 0; i--) {
+            System.out.println("Done reading data.tsv - " + allTitles.size() + " entries \n");
+            for(int i = allTitles.size() - 1; i > 0; i--) {
+                String id = allTitles.get(i)[0];
+                String type = allTitles.get(i)[1];
+                String startYear = allTitles.get(i)[5];
+
                 try {
-                    String id = allRows.get(i)[0];
-                    String type = allRows.get(i)[1];
-                    int year = 0;
-                    year = Integer.parseInt(allRows.get(i)[5]);
-
+                    int year = Integer.parseInt(startYear);
                     if(type.equals("movie") && (year == 2017 || year == 2018)) {
-                        System.out.println(i + " - " + allRows.get(i)[2] + " " + year);
-                        titleID.add(id);
+                        titles.add(id);
+                        System.out.println(id + " passed, year - " + type + " " + year);
                     }
-                    else
-                        System.out.println(i + " - " + " " + year);
-                }catch(NumberFormatException e) { }
+                }catch(NumberFormatException e) {
+                    System.out.println(id + " number fail, " + type + " " + startYear);
+                }
             }
 
-            PrintWriter printer = new PrintWriter(new File("newHello.txt"));
-            for(int i = 1; i < titleID.size(); i++)
-                printer.println(titleID.get(i));
+            PrintWriter printer = new PrintWriter(new File("allMovies.txt"));
+            for(int i = 1; i < titles.size(); i++)
+                printer.println(titles.get(i));
             printer.close();
 
-            System.out.println("Done MakeIDs\n\n");
+            System.out.println("\nDone making titles - " + titles.size() + " entries\n");
 
         }catch(FileNotFoundException e) {
             System.out.println(e.getMessage());
@@ -53,33 +52,39 @@ public class Imdb {
     }
 
     public static void doPosts() {
-        long start = System.currentTimeMillis();
-        ArrayList<String> allId = new ArrayList<>();
+        try {
+            System.out.println("Sleeping...");
+            Thread.sleep(5000);
+        }catch(InterruptedException e) { }
 
-        ArrayList<String> totalFail = new ArrayList<>();
-        ArrayList<String> httpFail = new ArrayList<>();
+        long start = System.currentTimeMillis();
+        ArrayList<String> titles = new ArrayList<>();
+
+        ArrayList<String> list2017 = new ArrayList<>();
+        ArrayList<String> list2018 = new ArrayList<>();
         ArrayList<String> checkFail = new ArrayList<>();
 
         JSONParser parser = new JSONParser();
         JSONObject current = new JSONObject();
         JSONObject upcoming = new JSONObject();
 
-        Scanner in = new Scanner(System.in);
-
-
         int total = 0, failed = 0, pass = 0, cur = 0, upc = 0;
         try {
-            Scanner scanner = new Scanner(new File("Movies 17-18.txt"));
+            Scanner scanner = new Scanner(new File("allMovies.txt"));
 
             while (scanner.hasNextLine())
-                allId.add(scanner.nextLine());
+                titles.add(scanner.nextLine());
+
+            scanner.close();
         }catch(FileNotFoundException err) {
             System.out.println("File Not Found: " + err.getMessage());
         }
 
+        System.out.println("\nDone reading titles - " + titles.size() + " entries\n");
 
-        for(int index = allId.size() - 1; index >=0 && run; index--) {
-            String id = allId.get(index);
+
+        for(int index = titles.size() - 1; index >=0 && run; index--) {
+            String id = titles.get(index);
 
             if(total % 50 == 0)
                 System.out.println("\nTotal = " + total + ", Failed = " + failed + ", Movies = " + pass + ", Current = " + cur + ", Upcoming = " + upc);
@@ -106,6 +111,7 @@ public class Imdb {
                 if(tempJson.get("Response").toString().equalsIgnoreCase("True") & !tempJson.get("Title").toString().equalsIgnoreCase("N/A")) {
 
                     if(tempJson.get("Year").toString().equalsIgnoreCase("2017")) {
+                        list2017.add(id);
                         if(rate && rel && run && gen && dir && act && plot && lang && coun && post && rati && box) {
                             current.put(id, tmpObj);
                             pass++;
@@ -117,6 +123,7 @@ public class Imdb {
                         }
                     }
                     else if(tempJson.get("Year").toString().equalsIgnoreCase("2018")) {
+                        list2018.add(id);
                         if(rel && gen && dir && act && plot && lang && coun && post) {
                             upcoming.put(id, tmpObj);
                             pass++;
@@ -127,21 +134,16 @@ public class Imdb {
                             failed++;
                         }
                     }
-                    else {
-                        totalFail.add(id);
+                    else
                         failed++;
-                    }
                 }
                 else {
-                    totalFail.add(id);
                     failed++;
                 }
 
             }catch(ParseException e) {
-                totalFail.add(id);
                 failed++;
             }catch(Exception e) {
-                httpFail.add(id);
                 failed++;
             }
             total++;
@@ -157,21 +159,21 @@ public class Imdb {
             FileWriter p1 = new FileWriter("current.json");
             FileWriter p2 = new FileWriter("upcoming.json");
 
-            PrintWriter p3 = new PrintWriter(new File("totalFail.txt"));
-            PrintWriter p4 = new PrintWriter(new File("checkFail.txt"));
-            PrintWriter p5 = new PrintWriter(new File("httpFail.txt"));
+            PrintWriter p3 = new PrintWriter(new File("list2017.txt"));
+            PrintWriter p4 = new PrintWriter(new File("list2018.txt"));
+            PrintWriter p5 = new PrintWriter(new File("checkFail.txt"));
 
             p1.write(current.toJSONString());
             p2.write(upcoming.toJSONString());
 
-            for(int i = 0; i < totalFail.size(); i++)
-                p3.println(totalFail.get(i));
+            for(int i = 0; i < list2017.size(); i++)
+                p3.println(list2017.get(i));
+
+            for(int i = 0; i < list2018.size(); i++)
+                p4.println(list2018.get(i));
 
             for(int i = 0; i < checkFail.size(); i++)
-                p4.println(checkFail.get(i));
-
-            for(int i = 0; i < httpFail.size(); i++)
-                p5.println(httpFail.get(i));
+                p5.println(checkFail.get(i));
 
             p1.close();
             p2.close();
@@ -211,7 +213,7 @@ public class Imdb {
 
 
     public static void main(String[] args) {
-//        makeIDS();
+        makeIDS();
 
         Runab one = new Runab();
         Thread t1 = new Thread(one);
