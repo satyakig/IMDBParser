@@ -216,7 +216,7 @@ public class Imdb_Omdb {
     public static void main(String[] args) {
         makeIDS();
 
-        Exit one = new Exit();
+        Exit one = new Exit(true);
         Thread t1 = new Thread(one);
         t1.setDaemon(true);
         t1.start();
