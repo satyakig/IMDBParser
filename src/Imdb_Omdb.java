@@ -1,14 +1,15 @@
 import com.univocity.parsers.tsv.TsvParser;
 import com.univocity.parsers.tsv.TsvParserSettings;
-
-import java.io.*;
-import java.util.*;
-import java.net.*;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-public class Imdb {
+import java.io.*;
+import java.util.*;
+import java.net.*;
+
+
+public class Imdb_Omdb {
     public static volatile boolean run = true;
 
     public static void makeIDS() {
@@ -39,7 +40,7 @@ public class Imdb {
                 }
             }
 
-            PrintWriter printer = new PrintWriter(new File("allMovies.txt"));
+            PrintWriter printer = new PrintWriter(new File("movies.txt"));
             for(int i = 1; i < titles.size(); i++)
                 printer.println(titles.get(i));
             printer.close();
@@ -70,7 +71,7 @@ public class Imdb {
 
         int total = 0, failed = 0, pass = 0, cur = 0, upc = 0;
         try {
-            Scanner scanner = new Scanner(new File("allMovies.txt"));
+            Scanner scanner = new Scanner(new File("movies.txt"));
 
             while (scanner.hasNextLine())
                 titles.add(scanner.nextLine());
@@ -215,11 +216,12 @@ public class Imdb {
     public static void main(String[] args) {
         makeIDS();
 
-        Runab one = new Runab();
+        Exit one = new Exit();
         Thread t1 = new Thread(one);
         t1.setDaemon(true);
         t1.start();
 
         doPosts();
+
     }
 }
