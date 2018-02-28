@@ -125,10 +125,16 @@ public class Imdb_Omdb {
                     }
                     else if(tempJson.get("Year").toString().equalsIgnoreCase("2018")) {
                         if(rel && gen && dir && act && plot && lang && coun && post) {
-                            upcoming.put(id, tmpObj);
-                            list2018.add(id);
-                            pass++;
-                            upc++;
+                            if(checkUpcoming(tempJson.get("Released").toString())) {
+                                upcoming.put(id, tmpObj);
+                                list2018.add(id);
+                                pass++;
+                                upc++;
+                            }
+                            else {
+                                checkFail.add(id);
+                                failed++;
+                            }
                         }
                         else {
                             checkFail.add(id);
@@ -186,6 +192,22 @@ public class Imdb_Omdb {
             e.printStackTrace();
             System.out.println("IOException: " + e.getMessage());
         }
+    }
+
+    private static boolean checkUpcoming(String released) {
+        String lower = released.toLowerCase();
+        if(lower.contains("2018"))
+            return true;
+        else if(lower.contains("2019"))
+            return true;
+        else if(lower.contains("2020"))
+            return true;
+        else if(lower.contains("2021"))
+            return true;
+        else if(lower.contains("2022"))
+            return true;
+        else
+            return false;
     }
 
     public static String get(String id) throws Exception {
