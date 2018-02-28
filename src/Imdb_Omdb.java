@@ -112,9 +112,9 @@ public class Imdb_Omdb {
                 if(tempJson.get("Response").toString().equalsIgnoreCase("True") & !tempJson.get("Title").toString().equalsIgnoreCase("N/A")) {
 
                     if(tempJson.get("Year").toString().equalsIgnoreCase("2017")) {
-                        list2017.add(id);
                         if(rate && rel && run && gen && dir && act && plot && lang && coun && post && rati && box) {
                             current.put(id, tmpObj);
+                            list2017.add(id);
                             pass++;
                             cur++;
                         }
@@ -124,9 +124,9 @@ public class Imdb_Omdb {
                         }
                     }
                     else if(tempJson.get("Year").toString().equalsIgnoreCase("2018")) {
-                        list2018.add(id);
                         if(rel && gen && dir && act && plot && lang && coun && post) {
                             upcoming.put(id, tmpObj);
+                            list2018.add(id);
                             pass++;
                             upc++;
                         }
@@ -207,12 +207,6 @@ public class Imdb_Omdb {
         return response.toString();
     }
 
-    public static void doThread() {
-        Thread t = new Thread();
-
-    }
-
-
     public static void main(String[] args) {
         makeIDS();
 
@@ -222,6 +216,5 @@ public class Imdb_Omdb {
         t1.start();
 
         doPosts();
-
     }
 }

@@ -149,8 +149,8 @@ public class Videos {
         upcomingIDs = new ArrayList<>();
 
         try {
-            Scanner scanner1 = new Scanner(new File("1.txt"));
-            Scanner scanner2 = new Scanner(new File("2.txt"));
+            Scanner scanner1 = new Scanner(new File("list2017.txt"));
+            Scanner scanner2 = new Scanner(new File("list2018.txt"));
 
             while(scanner1.hasNextLine())
                 currentIDs.add(scanner1.nextLine());
