@@ -34,7 +34,7 @@ public class Location {
 
     public static String[] adds = {
             "Eau Claire Market, 200 Barclay Parade SW, 200 Barclay Parade S.W., Calgary, AB, T2P 4R5",
-            "6455 Macleod Trail SW , Calgary, AB, T2H 0K4",
+            "6455 Macleod Trail SW, Calgary, AB, T2H 0K4",
             "#400, 2555-32nd Street NE, Calgary, AB, T1Y 7J6",
             "165 Stewart Green SW, Calgary, AB, T3H 3C8",
             "91 Crowfoot Terrace NW, Calgary, AB, T3G 2L5",
