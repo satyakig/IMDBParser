@@ -11,8 +11,12 @@ import java.net.*;
 public class Videos {
     public static volatile boolean run = true;
 
-    public static ArrayList<String> currentIDs;
-    public static ArrayList<String> upcomingIDs;
+    private static ArrayList<String> currentIDs;
+    private static ArrayList<String> upcomingIDs;
+
+    private static JSONParser parser = new JSONParser();
+    private static JSONArray current = new JSONArray();
+    private static JSONArray upcoming = new JSONArray();
 
     public static String getMovie(String id) throws Exception {
 
@@ -55,9 +59,6 @@ public class Videos {
     }
 
     public static void makeJson() {
-        JSONParser parser = new JSONParser();
-        JSONArray current = new JSONArray();
-        JSONArray upcoming = new JSONArray();
 
         for(int i = 0; i < currentIDs.size() && run; i++) {
             String id = currentIDs.get(i);
@@ -71,7 +72,6 @@ public class Videos {
                 JSONObject arrObj = (JSONObject) arr.get(0);
 
                 String tmdbID = arrObj.get("id").toString();
-                System.out.println(tmdbID);
 
                 if(tmdbID != null) {
                     Thread.sleep(300);
@@ -106,7 +106,6 @@ public class Videos {
                 JSONObject arrObj = (JSONObject) arr.get(0);
 
                 String tmdbID = arrObj.get("id").toString();
-                System.out.println(tmdbID);
 
                 if(tmdbID != null) {
                     Thread.sleep(300);
@@ -162,7 +161,7 @@ public class Videos {
         }catch(FileNotFoundException err) {
             System.out.println(err.getMessage());
         }
-        System.out.println(currentIDs.size() + ", " + upcomingIDs.size());
+        System.out.println("\nStarting making videos... Current - " + currentIDs.size() + ", Upcoming" + upcomingIDs.size());
     }
 
     public static void main(String[] args) {

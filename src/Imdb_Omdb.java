@@ -12,6 +12,13 @@ import java.net.*;
 public class Imdb_Omdb {
     public static volatile boolean run = true;
 
+    private static ArrayList<String> titles = new ArrayList<>();
+    private static ArrayList<String> checkFail = new ArrayList<>();
+
+    private static JSONParser parser = new JSONParser();
+    private static JSONObject current = new JSONObject();
+    private static JSONObject upcoming = new JSONObject();
+
     public static void makeIDS() {
         TsvParserSettings settings = new TsvParserSettings();
         settings.getFormat().setLineSeparator("\n");
@@ -52,43 +59,59 @@ public class Imdb_Omdb {
         }
     }
 
-    public static void doPosts() {
+    public static void removeOldFailed() {
+        long start = System.currentTimeMillis();
         try {
-            System.out.println("Sleeping...");
-            Thread.sleep(5000);
+            System.out.println("Going to remove old failed titles...");
+            Thread.sleep(2500);
         }catch(InterruptedException e) { }
 
-        long start = System.currentTimeMillis();
-        ArrayList<String> titles = new ArrayList<>();
-
-        ArrayList<String> list2017 = new ArrayList<>();
-        ArrayList<String> list2018 = new ArrayList<>();
-        ArrayList<String> checkFail = new ArrayList<>();
-
-        JSONParser parser = new JSONParser();
-        JSONObject current = new JSONObject();
-        JSONObject upcoming = new JSONObject();
-
-        int total = 0, failed = 0, pass = 0, cur = 0, upc = 0;
         try {
-            Scanner scanner = new Scanner(new File("movies.txt"));
+            Scanner scanner1 = new Scanner(new File("movies.txt"));
+            Scanner scanner2 = new Scanner(new File("files/checkFail.txt"));
 
-            while (scanner.hasNextLine())
-                titles.add(scanner.nextLine());
+            while (scanner1.hasNextLine())
+                titles.add(scanner1.nextLine());
 
-            scanner.close();
+            while (scanner2.hasNextLine())
+                checkFail.add(scanner2.nextLine());
+
+            scanner1.close();
+            scanner2.close();
+            System.out.println("All Movies - " + titles.size() + ", Failed Movies - " + checkFail.size());
+
+            for(int i = 0; i < titles.size(); i++) {
+                String title = titles.get(i);
+                for(int j = 0; j < checkFail.size(); j++) {
+                    if(title.equalsIgnoreCase(checkFail.get(j))) {
+                        titles.remove(i);
+                        break;
+                    }
+                }
+            }
+
+            long end = System.currentTimeMillis();
+            long diff = end - start;
+            System.out.println("Time elapsed = " + ((diff / 1000) / 3600) +  "hrs  " + ((diff / 1000) / 60) +  "mins  " + ((diff / 1000) % 60) + " secs");
         }catch(FileNotFoundException err) {
             System.out.println("File Not Found: " + err.getMessage());
         }
+    }
 
-        System.out.println("\nDone reading titles - " + titles.size() + " entries\n");
+    public static void doPosts() {
+        long start = System.currentTimeMillis();
+        System.out.println("\nStarting doPosts... " + titles.size() + " entries\n");
 
+        ArrayList<String> list2017 = new ArrayList<>();
+        ArrayList<String> list2018 = new ArrayList<>();
+
+        int total = 0, failed = 0, pass = 0, cur = 0, upc = 0;
 
         for(int index = titles.size() - 1; index >=0 && run; index--) {
             String id = titles.get(index);
 
-            if(total % 50 == 0)
-                System.out.println("\nTotal = " + total + ", Failed = " + failed + ", Movies = " + pass + ", Current = " + cur + ", Upcoming = " + upc);
+            if(total % 200 == 0)
+                System.out.println("Done = " + total + ", Left = " + (titles.size() - total) + ", Passed = " + pass + ", Failed = " + failed + ", Current = " + cur + ", Upcoming = " + upc);
 
             try {
                 String res = get(id);
@@ -109,8 +132,8 @@ public class Imdb_Omdb {
                 boolean box = !tempJson.get("BoxOffice").toString().equalsIgnoreCase("N/A");
 
 
-                if(tempJson.get("Response").toString().equalsIgnoreCase("True") & !tempJson.get("Title").toString().equalsIgnoreCase("N/A")) {
-
+                if(tempJson.get("Response").toString().equalsIgnoreCase("True") && !tempJson.get("Title").toString().equalsIgnoreCase("N/A"))
+                {
                     if(tempJson.get("Year").toString().equalsIgnoreCase("2017")) {
                         if(rate && rel && run && gen && dir && act && plot && lang && coun && post && rati && box) {
                             current.put(id, tmpObj);
@@ -123,9 +146,11 @@ public class Imdb_Omdb {
                             failed++;
                         }
                     }
-                    else if(tempJson.get("Year").toString().equalsIgnoreCase("2018")) {
-                        if(rel && gen && dir && act && plot && lang && coun && post) {
-                            if(checkUpcoming(tempJson.get("Released").toString())) {
+                    else {
+                        if(rel && gen && dir && act && plot && lang && coun && post)
+                        {
+                            if(checkUpcoming(tempJson.get("Released").toString()))
+                            {
                                 upcoming.put(id, tmpObj);
                                 list2018.add(id);
                                 pass++;
@@ -141,14 +166,14 @@ public class Imdb_Omdb {
                             failed++;
                         }
                     }
-                    else
-                        failed++;
                 }
                 else {
+                    checkFail.add(id);
                     failed++;
                 }
 
             }catch(ParseException e) {
+                checkFail.add(id);
                 failed++;
             }catch(Exception e) {
                 failed++;
@@ -160,7 +185,9 @@ public class Imdb_Omdb {
         try {
             long end = System.currentTimeMillis();
             long diff = end - start;
-            System.out.println("\nTime elapsed = " + (diff / (60 * 1000) % 60) +  "mins  " + diff / 1000 % 60 + " secs");
+            long hrs = (diff / 1000) / 3600;
+            long mins = ((diff - (hrs * 3600 * 1000)) / 1000) / 60;
+            System.out.println("\nTime elapsed = " + hrs +  "hrs  " + mins +  "mins  " + ((diff / 1000) % 60) + " secs");
             System.out.println("Total = " + total + ", Failed = " + failed + ", Movies = " + pass + ", Current = " + cur + ", Upcoming = " + upc);
 
             FileWriter p1 = new FileWriter("current.json");
@@ -205,6 +232,12 @@ public class Imdb_Omdb {
         else if(lower.contains("2021"))
             return true;
         else if(lower.contains("2022"))
+            return true;
+        else if(lower.contains("2023"))
+            return true;
+        else if(lower.contains("2024"))
+            return true;
+        else if(lower.contains("2025"))
             return true;
         else
             return false;
