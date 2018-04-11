@@ -9,57 +9,64 @@ import java.net.*;
 
 
 public class Videos {
-    public static volatile boolean run = true;
+    public volatile boolean run = true;
 
-    private static ArrayList<String> currentIDs;
-    private static ArrayList<String> upcomingIDs;
+    private ArrayList<String> currentIDs;
+    private ArrayList<String> upcomingIDs;
 
-    private static JSONParser parser = new JSONParser();
-    private static JSONArray current = new JSONArray();
-    private static JSONArray upcoming = new JSONArray();
+    private JSONParser parser;
+    private JSONArray current;
+    private JSONArray upcoming;
 
-    public static String getMovie(String id) throws Exception {
+    public Videos() {
+        currentIDs = new ArrayList<>();
+        upcomingIDs = new ArrayList<>();
 
-        String url = "https://api.themoviedb.org/3/find/" + id + "?api_key=f2f28a178514b22b8ed92869734bf6ac&external_source=imdb_id";
-        URL obj = new URL(url);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-        con.setRequestMethod("GET");
-        con.setRequestProperty("Content-Type", "application/json");
-        con.setRequestProperty("charset", "utf-8");
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-        String inputLine;
-        StringBuffer response = new StringBuffer();
-
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-        }
-        in.close();
-        return response.toString();
+        parser = new JSONParser();
+        current = new JSONArray();
+        upcoming = new JSONArray();
     }
 
-    public static String getVideos(String id) throws Exception {
+    public void start() {
+        long start = System.currentTimeMillis();
 
-        String url = "https://api.themoviedb.org/3/movie/" + id + "/videos?api_key=f2f28a178514b22b8ed92869734bf6ac";
-        URL obj = new URL(url);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-        con.setRequestMethod("GET");
-        con.setRequestProperty("Content-Type", "application/json");
-        con.setRequestProperty("charset", "utf-8");
+        Exit one = new Exit(this);
+        Thread t1 = new Thread(one);
+        t1.setDaemon(true);
+        t1.start();
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-        String inputLine;
-        StringBuffer response = new StringBuffer();
+        this.readIDs();
+        this.makeJson();
 
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-        }
-        in.close();
-        return response.toString();
+        long end = System.currentTimeMillis();
+        long diff = end - start;
+        long hrs = (diff / 1000) / 3600;
+        long mins = ((diff - (hrs * 3600 * 1000)) / 1000) / 60;
+        System.out.println("\nTime elapsed for Videos = " + hrs +  "hrs  " + mins +  "mins  " + ((diff / 1000) % 60) + " secs");
     }
 
-    public static void makeJson() {
+    private void readIDs() {
+        currentIDs = new ArrayList<>();
+        upcomingIDs = new ArrayList<>();
 
+        try {
+            Scanner scanner1 = new Scanner(new File("currentMovies.txt"));
+            Scanner scanner2 = new Scanner(new File("upcomingMovies.txt"));
+
+            while(scanner1.hasNextLine())
+                currentIDs.add(scanner1.nextLine());
+            while(scanner2.hasNextLine())
+                upcomingIDs.add(scanner2.nextLine());
+
+            scanner1.close();
+            scanner2.close();
+        }catch(FileNotFoundException err) {
+            System.out.println(err.getMessage());
+        }
+        System.out.println("\nStarting making videos... Current - " + currentIDs.size() + ", Upcoming" + upcomingIDs.size());
+    }
+
+    private void makeJson() {
         for(int i = 0; i < currentIDs.size() && run; i++) {
             String id = currentIDs.get(i);
 
@@ -131,7 +138,6 @@ public class Videos {
             FileWriter p1 = new FileWriter("current-videos.json");
             FileWriter p2 = new FileWriter("upcoming-videos.json");
 
-
             p1.write(current.toJSONString());
             p2.write(upcoming.toJSONString());
 
@@ -143,35 +149,48 @@ public class Videos {
         }
     }
 
-    public static void readIDs() {
-        currentIDs = new ArrayList<>();
-        upcomingIDs = new ArrayList<>();
+    private String getMovie(String id) throws Exception {
 
-        try {
-            Scanner scanner1 = new Scanner(new File("list2017.txt"));
-            Scanner scanner2 = new Scanner(new File("list2018.txt"));
+        String url = "https://api.themoviedb.org/3/find/" + id + "?api_key=f2f28a178514b22b8ed92869734bf6ac&external_source=imdb_id";
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("GET");
+        con.setRequestProperty("Content-Type", "application/json");
+        con.setRequestProperty("charset", "utf-8");
 
-            while(scanner1.hasNextLine())
-                currentIDs.add(scanner1.nextLine());
-            while(scanner2.hasNextLine())
-                upcomingIDs.add(scanner2.nextLine());
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+        String inputLine;
+        StringBuffer response = new StringBuffer();
 
-            scanner1.close();
-            scanner2.close();
-        }catch(FileNotFoundException err) {
-            System.out.println(err.getMessage());
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
         }
-        System.out.println("\nStarting making videos... Current - " + currentIDs.size() + ", Upcoming" + upcomingIDs.size());
+        in.close();
+        return response.toString();
+    }
+
+    private String getVideos(String id) throws Exception {
+
+        String url = "https://api.themoviedb.org/3/movie/" + id + "/videos?api_key=f2f28a178514b22b8ed92869734bf6ac";
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("GET");
+        con.setRequestProperty("Content-Type", "application/json");
+        con.setRequestProperty("charset", "utf-8");
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+        String inputLine;
+        StringBuffer response = new StringBuffer();
+
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        in.close();
+        return response.toString();
     }
 
     public static void main(String[] args) {
-        readIDs();
-
-        Exit one = new Exit(false);
-        Thread t1 = new Thread(one);
-        t1.setDaemon(true);
-        t1.start();
-
-        makeJson();
+        Videos videos = new Videos();
+        videos.start();
     }
 }

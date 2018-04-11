@@ -2,9 +2,15 @@ import java.util.*;
 
 public class Exit implements Runnable {
 
-    public boolean imdb;
-    public Exit(boolean im) {
-        imdb = im;
+    Imdb_Omdb imdb = null;
+    Videos videos = null;
+
+    public Exit(Imdb_Omdb instance) {
+        imdb = instance;
+    }
+
+    public Exit(Videos instance) {
+        videos = instance;
     }
 
     public void run() {
@@ -16,10 +22,10 @@ public class Exit implements Runnable {
             line = inp.nextLine();
 
             if(line.equalsIgnoreCase("q") || line.equalsIgnoreCase("quit")) {
-                if(imdb)
-                    Imdb_Omdb.run = false;
+                if(imdb != null)
+                    imdb.run = false;
                 else
-                    Videos.run = false;
+                    videos.run = false;
                 break;
             }
         }

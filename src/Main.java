@@ -3,20 +3,11 @@ public class Main {
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
 
-        Imdb_Omdb.makeIDS();
-        Exit one = new Exit(true);
-        Thread t1 = new Thread(one);
-        t1.setDaemon(true);
-        t1.start();
-        Imdb_Omdb.removeOldFailed();
-        Imdb_Omdb.doPosts();
+        Imdb_Omdb imdb = new Imdb_Omdb();
+        imdb.start();
 
-        Videos.readIDs();
-        Exit two = new Exit(false);
-        Thread t2 = new Thread(two);
-        t2.setDaemon(true);
-        t2.start();
-        Videos.makeJson();
+        Videos videos = new Videos();
+        videos.start();
 
         long end = System.currentTimeMillis();
         long diff = end - start;
