@@ -14,7 +14,7 @@ public class Theatre {
     }
 
     public static Theatre[] getRandomTheatres() {
-        int total = getRandom(10, 15);
+        int total = getRandom(20, 25);
         Theatre[] theatres = new Theatre[total];
 
         for(int i = 0; i < total; i++) {
