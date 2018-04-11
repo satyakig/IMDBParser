@@ -14,12 +14,12 @@ public class Theatre {
     }
 
     public static Theatre[] getRandomTheatres() {
-        int total = getRandom(16, 8);
+        int total = getRandom(10, 15);
         Theatre[] theatres = new Theatre[total];
 
         for(int i = 0; i < total; i++) {
-            int r = getRandom(11, 5);
-            int c = getRandom(10, 5);
+            int r = getRandom(5, 7);
+            int c = getRandom(5, 7);
 
             theatres[i] = new Theatre(i, r, c);
         }
@@ -27,9 +27,9 @@ public class Theatre {
         return theatres;
     }
 
-    public static int getRandom(int hi, int lo) {
+    public static int getRandom(int lo, int hi) {
         Random rand = new Random();
-        int random = rand.nextInt(hi - lo) + lo;
+        int random = rand.nextInt(hi + 1 - lo) + lo;
 
         return random;
     }
